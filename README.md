@@ -15,7 +15,7 @@
 - actions.py: основная логика  
 - db.py: работа с базой данных
 - telegramcalendar.py: генерация календаря в удобном виде, по мотивам https://github.com/grcanosa  
-- config.py: хранение токена  
+- config.py: токен бота  
 
 
 **Доступные команды:**  
