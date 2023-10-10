@@ -1,1 +1,1 @@
-TOKEN = "insert_bot_token_here"
+TOKEN = "place_your_token_here"
