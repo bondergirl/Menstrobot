@@ -168,15 +168,30 @@ class BotActions(telebot.TeleBot):
         cycles = db.BotDB(table_name="cycles.sql")
         user_cycles = cycles.db_statistics(user_id)
         markup = telebot.types.InlineKeyboardMarkup()
+        data_ignore = telegramcalendar.create_callback_data("IGNORE", 2000, 1, 1)
         if user_cycles:
-            for date in user_cycles:
-                date_tuple = sql_to_int(date[0])
-                date_callback = telegramcalendar.create_callback_data(action="IGNORE",
-                                                                      year=date_tuple[1],
-                                                                      month=date_tuple[2],
-                                                                      day=date_tuple[3])
-                markup.add(telebot.types.InlineKeyboardButton(text=date[0],
-                                                              callback_data=date_callback))
+            markup.add(telebot.types.InlineKeyboardButton(text="Дата",
+                                                          callback_data=data_ignore),
+                       telebot.types.InlineKeyboardButton(text="Длительность цикла",
+                                                          callback_data=data_ignore))
+            for i in range(len(user_cycles)):
+                date = user_cycles[i]
+                if i + 1 != len(user_cycles):
+                    curr_date = sql_to_date(date[0])
+                    next_date = sql_to_date(user_cycles[i + 1][0])
+                    cycle_range = (next_date - curr_date).days
+                    markup.add(telebot.types.InlineKeyboardButton(text=date[0],
+                                                                  callback_data=data_ignore),
+                               telebot.types.InlineKeyboardButton(text=str(cycle_range),
+                                                                  callback_data=data_ignore))
+                else:
+                    today = datetime.date.today()
+                    curr_date = sql_to_date(date[0])
+                    cycle_range = (today - curr_date).days + 1
+                    markup.add(telebot.types.InlineKeyboardButton(text=date[0],
+                                                                  callback_data=data_ignore),
+                               telebot.types.InlineKeyboardButton(text=str(cycle_range),
+                                                                  callback_data=data_ignore))
             self.send_message(message.chat.id,
                               text="Ваши циклы:",
                               reply_markup=markup)
