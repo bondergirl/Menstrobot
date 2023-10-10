@@ -15,13 +15,11 @@ class BotDB:
                                                         registered TEXT NOT NULL
                                                         );
                     """)
-
         try:
             sqlite_insert = """INSERT
                                             INTO users (id, user, registered) 
                                             VALUES (?, ?, ?);
                             """
-
             user = (user_id, username, now)
             self.cur.execute(sqlite_insert, user)
             self.result = True

@@ -40,7 +40,8 @@ def create_calendar(year: int, month: int) -> telebot.types.InlineKeyboardMarkup
     # First row - Month and Year
     cl = calendar.LocaleTextCalendar(firstweekday=0, locale=('Russian_Russia', '1251'))
     row = [telebot.types.InlineKeyboardButton(text=cl.formatmonth(year, month).split("\n")[0],
-                                              callback_data=data_ignore)]
+                                              callback_data=create_callback_data("YEAR",
+                                                                                 year, month, 0))]
     keyboard.append(row)
     # Second row - Week Days
     row = []
@@ -70,6 +71,62 @@ def create_calendar(year: int, month: int) -> telebot.types.InlineKeyboardMarkup
            telebot.types.InlineKeyboardButton(text=">",
                                               callback_data=create_callback_data("NEXT-MONTH",
                                                                                  year, month, day))]
+    keyboard.append(row)
+
+    return telebot.types.InlineKeyboardMarkup(keyboard)
+
+
+def create_year(year: int) -> telebot.types.InlineKeyboardMarkup:
+    keyboard = []
+    row = [telebot.types.InlineKeyboardButton(text="<",
+                                              callback_data=create_callback_data("PREV-YEAR",
+                                                                                 year, 1, 0)),
+           telebot.types.InlineKeyboardButton(text=str(year),
+                                              callback_data=create_callback_data("IGNORE",
+                                                                                 year, 0, 0)),
+           telebot.types.InlineKeyboardButton(text=">",
+                                              callback_data=create_callback_data("NEXT-YEAR",
+                                                                                 year, 1, 0))]
+    keyboard.append(row)
+    row = [telebot.types.InlineKeyboardButton(text="Январь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 1, 0)),
+           telebot.types.InlineKeyboardButton(text="Февраль",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 2, 0)),
+           telebot.types.InlineKeyboardButton(text="Март",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 3, 0))]
+    keyboard.append(row)
+    row = [telebot.types.InlineKeyboardButton(text="Апрель",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 4, 0)),
+           telebot.types.InlineKeyboardButton(text="Май",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 5, 0)),
+           telebot.types.InlineKeyboardButton(text="Июнь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 6, 0))]
+    keyboard.append(row)
+    row = [telebot.types.InlineKeyboardButton(text="Июль",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 7, 0)),
+           telebot.types.InlineKeyboardButton(text="Август",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 8, 0)),
+           telebot.types.InlineKeyboardButton(text="Сентябрь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 9, 0))]
+    keyboard.append(row)
+    row = [telebot.types.InlineKeyboardButton(text="Октябрь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 10, 0)),
+           telebot.types.InlineKeyboardButton(text="Ноябрь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 11, 0)),
+           telebot.types.InlineKeyboardButton(text="Декабрь",
+                                              callback_data=create_callback_data("MONTH",
+                                                                                 year, 12, 0))]
     keyboard.append(row)
 
     return telebot.types.InlineKeyboardMarkup(keyboard)

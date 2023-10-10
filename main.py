@@ -49,8 +49,9 @@ def custom_date(call: telebot.types.CallbackQuery):
 @bot.message_handler(commands=["change"])
 def change_cycle(message):
     bot.send_message(chat_id=message.chat.id,
-                     text="Выберите дату, которую хотите изменить, из статистики")
-    bot.show_statistics(message)
+                     text="Выберите дату, которую хотите изменить, из списка ниже. "
+                          "Выбранная дата будет удалена. После этого вы сможете выбрать новую дату.")
+    bot.remove_cycle(message)
 
 
 @bot.message_handler(commands=["statistics"])

@@ -98,6 +98,28 @@ class BotActions(telebot.TeleBot):
                                    chat_id=call.message.chat.id,
                                    message_id=call.message.message_id,
                                    reply_markup=self.show_calendar(call, int(ne.year), int(ne.month)))
+        elif action == "YEAR":
+            self.edit_message_text(text=call.message.text,
+                                   chat_id=call.message.chat.id,
+                                   message_id=call.message.message_id,
+                                   reply_markup=self.show_year(call, int(year, int(month))))
+        elif action == "PREV-YEAR":
+            pre_year = int(year) - 1
+            self.edit_message_text(text=call.message.text,
+                                   chat_id=call.message.chat.id,
+                                   message_id=call.message.message_id,
+                                   reply_markup=self.show_year(call, pre_year))
+        elif action == "NEXT-YEAR":
+            ne_year = int(year) + 1
+            self.edit_message_text(text=call.message.text,
+                                   chat_id=call.message.chat.id,
+                                   message_id=call.message.message_id,
+                                   reply_markup=self.show_year(call, ne_year))
+        elif action == "MONTH":
+            self.edit_message_text(text=call.message.text,
+                                   chat_id=call.message.chat.id,
+                                   message_id=call.message.message_id,
+                                   reply_markup=self.show_calendar(call, int(year), int(month)))
         elif action == "CHANGE":
             user_id = str(call.from_user.id)
             if int(month) < 10:
@@ -108,14 +130,19 @@ class BotActions(telebot.TeleBot):
             self.send_message(chat_id=call.message.chat.id,
                               text=f"Удаляем дату: {date_to_change}")
             cycles = db.BotDB(table_name="cycles.sql")
-            if cycles.db_remove_cycle(user_id=user_id, date_to_delete=date_to_change):
+            try:
+                cycles.db_remove_cycle(user_id=user_id, date_to_delete=date_to_change)
                 self.send_message(chat_id=call.message.chat.id,
                                   text=f"Дата успешно удалена! Внесите новую дату начала цикла: команда /start")
-            else:
+            except Exception as e:
                 self.send_message(chat_id=call.message.chat.id,
-                                  text="Удалить данные не удалось")
+                                  text="Удалить данные не удалось. Попробуйте еще раз /start или напишите "
+                                       "о проблеме на почту: menstrobot@mail.ru")
+                print(repr(e))
         else:
-            self.send_message(call.message.chat.id, text="Что-то пошло не так!")
+            self.send_message(chat_id=call.message.chat.id,
+                              text="Что-то пошло не так! Попробуйте еще раз: /start"
+                                   "или напишите о проблеме на почту: menstrobot@mail.ru")
         return ret_data
 
     def show_calendar(self, call: telebot.types.CallbackQuery, year: int = None, month: int = None):
@@ -124,14 +151,40 @@ class BotActions(telebot.TeleBot):
             year = now.year
         if month is None:
             month = now.month
-        self.send_message(call.message.chat.id,
+        self.send_message(chat_id=call.message.chat.id,
                           text="Выберите дату: " + telegramcalendar.get_month_and_year(year, month),
                           reply_markup=telegramcalendar.create_calendar(year, month))
 
+    def show_year(self, call: telebot.types.CallbackQuery, year: int = None):
+        now = datetime.datetime.now()
+        if year is None:
+            year = now.year
+        self.send_message(chat_id=call.message.chat.id,
+                          text="Выберите дату:",
+                          reply_markup=telegramcalendar.create_year(year))
+
     def show_statistics(self, message: telebot.types.Message):
-        self.show_cycle(message)
         user_id = [str(message.from_user.id)]
-        print(user_id)
+        cycles = db.BotDB(table_name="cycles.sql")
+        user_cycles = cycles.db_statistics(user_id)
+        markup = telebot.types.InlineKeyboardMarkup()
+        if user_cycles:
+            for date in user_cycles:
+                date_tuple = sql_to_int(date[0])
+                date_callback = telegramcalendar.create_callback_data(action="IGNORE",
+                                                                      year=date_tuple[1],
+                                                                      month=date_tuple[2],
+                                                                      day=date_tuple[3])
+                markup.add(telebot.types.InlineKeyboardButton(text=date[0],
+                                                              callback_data=date_callback))
+            self.send_message(message.chat.id,
+                              text="Ваши циклы:",
+                              reply_markup=markup)
+        else:
+            self.send_message(message.chat.id, "Ваши данные о циклах пока пусты. Внесите первые данные командой /start")
+
+    def remove_cycle(self, message: telebot.types.Message):
+        user_id = [str(message.from_user.id)]
         cycles = db.BotDB(table_name="cycles.sql")
         user_cycles = cycles.db_statistics(user_id)
         markup = telebot.types.InlineKeyboardMarkup()
@@ -144,18 +197,22 @@ class BotActions(telebot.TeleBot):
                                                                       day=date_tuple[3])
                 markup.add(telebot.types.InlineKeyboardButton(text=date[0],
                                                               callback_data=date_callback))
-            self.send_message(message.chat.id,
-                              text="Ваши циклы:",
+            self.send_message(chat_id=message.chat.id,
+                              text="Для удаления цикла нажмите на него:",
                               reply_markup=markup)
         else:
-            self.send_message(message.chat.id, "Ваши данные о циклах пока пусты. Внесите первые данные командой START")
+            self.send_message(chat_id=message.chat.id,
+                              text="Ваши данные о циклах пока пусты. Внесите первые данные командой /start")
 
     def show_cycle(self, message: telebot.types.Message):
         user_id = str(message.from_user.id)
         cycles = db.BotDB(table_name="cycles.sql")
-        last_cycle_date = cycles.db_show_last_cycle([user_id])[0][0]
-        today = datetime.date.today()
-        curr_cycle_days = (today - sql_to_date(last_cycle_date)).days
-        self.send_message(message.chat.id, f"Сегодня {curr_cycle_days}-й день цикла.")
-        self.send_message(message.chat.id, f"Дата вашего последнего цикла:\n"
-                                           f"{last_cycle_date}")
+        try:
+            last_cycle_date = cycles.db_show_last_cycle([user_id])[0][0]
+            today = datetime.date.today()
+            curr_cycle_days = (today - sql_to_date(last_cycle_date)).days + 1
+            self.send_message(message.chat.id, f"Сегодня {curr_cycle_days}-й день цикла.")
+            self.send_message(message.chat.id, f"Дата вашего последнего цикла:\n"
+                                               f"{last_cycle_date}")
+        except Exception as e:
+            print(repr(e))
